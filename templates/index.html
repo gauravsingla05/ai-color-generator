@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Palette Generator</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+          color: white;
+          background-color: black;
+      }
+      .container-fluid {
+          position: relative;
+      }
+      #colorOverlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 10;
+          pointer-events: none;
+      }
+      .colorStrip {
+          pointer-events: auto;
+          position: relative;
+          width: 100%;
+          height: 100vh;
+          display: inline-block;
+          float: left;
+      }
+      .colorText {
+          color: white;
+          font-weight: bold;
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 20px;
+          pointer-events: none;
+      }
+      
+      #colorQuery.form-control {
+          width: 100% !important; /* Force width, but use !important judiciously */
+      }
+      .form-group {
+          margin-bottom: 1rem;
+          width: 70%;
+      }
+
+    </style>
+</head>
+
+<body>
+  <div id="colorOverlay"></div>
+  <div class="container-fluid d-flex flex-column justify-content-center align-items-center vh-100">
+      <h2>Enter A Theme To Generate Colors Like</h2>
+      <ol>
+          <li>Colors of Instagram</li>
+          <li>Colors from stars and planets far away</li>
+          <li>Eye Catching Colors</li>
+      </ol>
+      <div class="form-group">
+          <input type="text" id="colorQuery" class="form-control" placeholder="Enter theme (e.g., 'Facebook Logo')" maxlength="100">
+      </div>
+      <button id="submitBtn" class="btn btn-primary">Generate Colors</button>
+      <p id="loading" class="mt-3"></p>
+  </div>
+
+    <script>
+ document.getElementById('submitBtn').addEventListener('click', function () {
+    const query = document.getElementById('colorQuery').value;
+    loading.textContent = "Loading....";
+    fetch('/generate-colors', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: query }),
+    })
+    .then(response => {
+        loading.textContent = "";
+    if (response.status === 429) {
+        response.text().then(text => {
+            alert("Max Limits Reached"); // Shows the rate limit error message
+            loading.textContent = "Max Limits Reached";
+        });
+    } else {
+        return response.json();
+    }
+})
+    .then(data => {
+        loading.textContent = "";
+        console.log(data);
+        var overlay = document.getElementById('colorOverlay');
+        overlay.innerHTML = ''; // Clear previous colors
+        overlay.style.zIndex = 10; // Ensure overlay is above the base content
+
+        var colors = data.colors || []; // Use fetched colors or fallback to empty array if undefined
+
+        colors.forEach(color => {
+            const colorDiv = document.createElement('div');
+            colorDiv.className = 'colorStrip';
+            colorDiv.style.backgroundColor = color;
+            colorDiv.style.width = `${100 / colors.length}%`;
+
+            const colorText = document.createElement('span');
+            colorText.textContent = color;
+            colorText.className = 'colorText';
+            colorText.style.position = 'absolute';
+            colorText.style.top = '10%';
+            colorText.style.left = '50%';
+            colorText.style.transform = 'translate(-50%, -10%)';
+
+          colorText.style.fontSize = '2vw'; 
+          const updateFontSize = () => {
+              const screenWidth = window.innerWidth;
+              if (screenWidth < 768) { 
+                  colorText.style.fontSize = '4vw'; 
+              } else {
+                  colorText.style.fontSize = '2vw'; 
+              }
+          };
+            colorDiv.appendChild(colorText);
+
+            overlay.appendChild(colorDiv);
+        });
+
+        let existingButton = document.getElementById('tryAgainButton');
+        var buttonElement;
+        if (!existingButton) {
+            // Button doesn't exist, create and append it
+             buttonElement = document.createElement('button');
+            buttonElement.id = 'tryAgainButton'; // Assign an ID for future reference
+            buttonElement.textContent = "Try Again";
+            buttonElement.style.position = 'absolute';
+            buttonElement.style.left = '50%';
+            buttonElement.style.bottom = '20px';
+            buttonElement.style.transform = 'translateX(-50%)';
+            buttonElement.style.zIndex = '2000';
+            buttonElement.style.padding = '10px 20px';
+
+            buttonElement.addEventListener('click', function() {
+                window.location.href = '/'; // Redirect to home page
+            });
+
+            document.body.appendChild(buttonElement);
+        } 
+
+
+        // Append the button to the body or a higher-level element than the overlay
+        document.body.appendChild(buttonElement);
+    })
+    .catch(error => console.log(error));
+});
+
+    </script>
+
+
+
+
+
+</body>
+
+</html>
